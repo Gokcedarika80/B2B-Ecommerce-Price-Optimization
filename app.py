@@ -1,11 +1,11 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-import plotly.express as px
+import plotly.express as pxa
 import plotly.graph_objects as go
-import io
 
-#st.set_page_config(
+# Sayfa Konfigürasyonu
+st.set_page_config(
     page_title="Gökçe Analytics | Kurumsal Karar Destek Portalı",
     page_icon="⚡",
     layout="wide"
@@ -26,7 +26,8 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-#if "authenticated" not in st.session_state:
+# Oturum Durumu Kontrolü
+if "authenticated" not in st.session_state:
     st.session_state["authenticated"] = False
 
 DEMO_USER = "admin"
@@ -56,7 +57,7 @@ if not st.session_state["authenticated"]:
 
 # ANA PORTAL
 else:
-    #    st.sidebar.title("⚡ Gökçe Analytics")
+    st.sidebar.title("⚡ Gökçe Analytics")
     st.sidebar.caption("Oturum Açan: **Admin (Kurumsal)**")
     
     if st.sidebar.button("🚪 Çıkış Yap", use_container_width=True):
@@ -79,7 +80,8 @@ else:
     st.sidebar.markdown("---")
     st.sidebar.info("📌 **Sürüm:** Enterprise v2.5\n**Destek:** info@gokceanalytics.com")
 
-    #    if secilen_proje == "📊 Yönetici Özeti (Executive Dashboard)":
+    # 1. YÖNETİCİ ÖZETİ
+    if secilen_proje == "📊 Yönetici Özeti (Executive Dashboard)":
         st.title("📊 Yönetici Özeti & KPI Paneli")
         st.caption("Şirket genel performans metrikleri ve AI destekli sistem durumu.")
         
@@ -94,7 +96,7 @@ else:
         col_a, col_b = st.columns([2, 1])
         with col_a:
             st.subheader("📈 Genel Satış İvmesi & AI Tahmin Trendi")
-            months = pd.date_range("2024-01-01", periods=18, freq="M")
+            months = pd.date_range("2024-01-01", periods=18, freq="ME")
             np.random.seed(42)
             sales_data = np.linspace(120000, 280000, 18) + np.random.normal(0, 10000, 18)
             df_exec = pd.DataFrame({"Tarih": months, "Ciro": sales_data})
@@ -110,7 +112,8 @@ else:
             * **Risk Scoring Engine:** Müşteri temerrüt olasılığı kestirimi.
             """)
 
-    #    elif secilen_proje == "💰 B2B Fiyat & Başabaş (Break-Even) Optimizasyonu":
+    # 2. B2B FİYAT OPTİMİZASYONU
+    elif secilen_proje == "💰 B2B Fiyat & Başabaş (Break-Even) Optimizasyonu":
         st.title("💰 B2B Fiyatlandırma, Esneklik & Başabaş Analizi")
         st.caption("Fiyat duyarlılığını simüle edin ve kârlılığı maksimize eden optimal noktayı belirleyin.")
         
@@ -154,7 +157,8 @@ else:
         
         st.plotly_chart(fig_price, use_container_width=True)
 
-    #    elif secilen_proje == "👥 Müşteri Segmentasyonu & Ömür Boyu Değer (CLV)":
+    # 3. MÜŞTERİ SEGMENTASYONU
+    elif secilen_proje == "👥 Müşteri Segmentasyonu & Ömür Boyu Değer (CLV)":
         st.title("👥 Müşteri Segmentasyonu & Ömür Boyu Değer (CLV) Analizi")
         
         uploaded_file = st.file_uploader("Kendi RFM Veri Setinizi Yükleyin (CSV / Excel)", type=["csv", "xlsx"], key="rfm_gen")
@@ -201,7 +205,8 @@ else:
                 * **🆕 Yeni Müşteriler:** Hoş geldin serisi ve onboarding eğitimleri verin.
                 """)
 
-    #    elif secilen_proje == "📈 Zaman Serisi, Anomali Tespiti & Senaryo Analizi":
+    # 4. ZAMAN SERİSİ ANALİZİ
+    elif secilen_proje == "📈 Zaman Serisi, Anomali Tespiti & Senaryo Analizi":
         st.title("📈 Zaman Serisi Analizi, Anomali Tespiti & What-If Senaryoları")
         st.caption("Gelecek dönem ciro projeksiyonu yapın, anomali günlerini tespit edin ve senaryoları simüle edin.")
         
@@ -218,7 +223,6 @@ else:
         has_custom = False
         if uploaded_ts is not None:
             try:
-                # Veriyi okuma
                 if uploaded_ts.name.endswith('.csv'):
                     df_raw = pd.read_csv(uploaded_ts)
                 else:
@@ -234,20 +238,16 @@ else:
                     sales_col = st.selectbox("Satış / Ciro Sütunu:", num_cols if num_cols else df_raw.columns)
                 with c_col3:
                     freq_choice = st.selectbox("Zaman Çözünürlüğü:", ["Aylık (Monthly)", "Haftalık (Weekly)", "Günlük (Daily)"])
-                    freq_map = {"Aylık (Monthly)": "M", "Haftalık (Weekly)": "W", "Günlük (Daily)": "D"}
+                    freq_map = {"Aylık (Monthly)": "ME", "Haftalık (Weekly)": "W", "Günlük (Daily)": "D"}
 
-                # Güvenli Tarih Dönüştürme
                 df_raw[date_col] = pd.to_datetime(df_raw[date_col], errors='coerce')
                 df_raw = df_raw.dropna(subset=[date_col, sales_col]).sort_values(by=date_col)
 
-                # Mantıksız/Gelecek Yılları Filtreleme
                 max_year = st.slider("Filtrele: Maksimum Yıl Seçimi", 2020, 2030, 2026)
                 df_raw = df_raw[df_raw[date_col].dt.year <= max_year]
 
-                # Seçilen Frekansta Toplulaştırma
                 df_m = df_raw.set_index(date_col).resample(freq_map[freq_choice])[sales_col].sum().reset_index()
                 
-                # Eksik / Dip Yapan Son Dönemi Temizleme
                 trim_last = st.checkbox("Son Tamamlanmamış / Eksik Dönemi Temizle (Dip Yapmayı Önler)", value=True)
                 if trim_last and len(df_m) > 2:
                     df_m = df_m.iloc[:-1]
@@ -262,12 +262,11 @@ else:
                 st.error(f"Veri işleme sırasında bir uyumsuzluk oluştu: {e}. Demo veri gösteriliyor.")
 
         if not has_custom:
-            dates = pd.date_range(start="2024-01-01", periods=24, freq="M")
+            dates = pd.date_range(start="2024-01-01", periods=24, freq="ME")
             np.random.seed(42)
             base_sales = np.linspace(100000, 250000, 24) + np.random.normal(0, 15000, 24)
             base_sales[8] = base_sales[8] * 1.45  # Yapay anomali
 
-        # Anomali Tespiti (Z-Score)
         mean_val = np.mean(base_sales)
         std_val = np.std(base_sales)
         if std_val > 0:
@@ -276,9 +275,8 @@ else:
         else:
             anomalies = np.zeros(len(base_sales), dtype=bool)
         
-        # Gelecek Tahmin Projeksiyonu
         last_date = dates.iloc[-1] if hasattr(dates, 'iloc') else dates[-1]
-        future_dates = pd.date_range(start=last_date + pd.DateOffset(months=1), periods=tahmin_ayi, freq="M")
+        future_dates = pd.date_range(start=last_date + pd.DateOffset(months=1), periods=tahmin_ayi, freq="ME")
         
         growth_rate = 0.02 * (1 + (pazarlama_artisi / 100))
         last_val = base_sales[-1]
@@ -287,7 +285,6 @@ else:
         upper_bound = [val * 1.12 for val in future_sales]
         lower_bound = [val * 0.88 for val in future_sales]
         
-        # Plotly Grafik Oluşturma
         fig_ts = go.Figure()
         
         fig_ts.add_trace(go.Scatter(x=dates, y=base_sales, mode='lines+markers', name='Geçmiş Satışlar', line=dict(color='#2E86C1', width=3)))
@@ -312,7 +309,6 @@ else:
         fig_ts.update_layout(title="Satış Projeksiyonu, Anomali ve Güven Aralığı Analizi", xaxis_title="Tarih", yaxis_title="Ciro / Miktar (TL)")
         st.plotly_chart(fig_ts, use_container_width=True)
         
-        # Export / İndirme Butonu
         df_export = pd.DataFrame({
             'Tarih': list(dates) + list(future_dates),
             'Ciro_TL': list(base_sales) + list(future_sales),
@@ -328,7 +324,8 @@ else:
             use_container_width=True
         )
 
-    #    elif secilen_proje == "💳 Kredi Riski & Müşteri Skorlama":
+    # 5. KREDİ RİSKİ VE SKORLAMA
+    elif secilen_proje == "💳 Kredi Riski & Müşteri Skorlama":
         st.title("💳 Kredi Riski & Temerrüt Risk Skorlama Paneli")
         st.caption("Makine öğrenmesi modelleriyle firma veya müşterilerin kredi geri ödeme risklerini hesaplayın.")
         
