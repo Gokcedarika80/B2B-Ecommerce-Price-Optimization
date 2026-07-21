@@ -5,10 +5,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 import io
 
-# ==========================================
-# 1. SAYFA YAPILANDIRMASI VE TEMA
-# ==========================================
-st.set_page_config(
+#st.set_page_config(
     page_title="Gökçe Analytics | Kurumsal Karar Destek Portalı",
     page_icon="⚡",
     layout="wide"
@@ -29,18 +26,13 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# ==========================================
-# 2. OTURUM DURUMU (SESSION STATE)
-# ==========================================
-if "authenticated" not in st.session_state:
+#if "authenticated" not in st.session_state:
     st.session_state["authenticated"] = False
 
 DEMO_USER = "admin"
 DEMO_PASS = "gokce2026"
 
-# ==========================================
 # GİRİŞ EKRANI (AUTHENTICATION)
-# ==========================================
 if not st.session_state["authenticated"]:
     st.markdown("<br><br><h1 style='text-align: center;'>🔒 Gökçe Analytics Portal Girişi</h1>", unsafe_allow_html=True)
     st.markdown("<p style='text-align: center; color: gray;'>Kurumsal veri analitiği ve yapay zeka karar destek sistemine hoş geldiniz.</p>", unsafe_allow_html=True)
@@ -62,12 +54,9 @@ if not st.session_state["authenticated"]:
         
         st.info("💡 **Demo Erişim Bilgileri:**\n* **Kullanıcı Adı:** `admin`  \n* **Şifre:** `gokce2026`")
 
-# ==========================================
-# ANA PORTAL (GİRİŞ YAPILDIKTAN SONRA)
-# ==========================================
+# ANA PORTAL
 else:
-    # SOL YAN MENÜ
-    st.sidebar.title("⚡ Gökçe Analytics")
+    #    st.sidebar.title("⚡ Gökçe Analytics")
     st.sidebar.caption("Oturum Açan: **Admin (Kurumsal)**")
     
     if st.sidebar.button("🚪 Çıkış Yap", use_container_width=True):
@@ -88,16 +77,12 @@ else:
     )
 
     st.sidebar.markdown("---")
-    st.sidebar.info("📌 **Sürüm:** Enterprise v2.4\n**Destek:** info@gokceanalytics.com")
+    st.sidebar.info("📌 **Sürüm:** Enterprise v2.5\n**Destek:** info@gokceanalytics.com")
 
-    # ----------------------------------------------------
-    # MODÜL 1: YÖNETİCİ ÖZETİ (EXECUTIVE DASHBOARD)
-    # ----------------------------------------------------
-    if secilen_proje == "📊 Yönetici Özeti (Executive Dashboard)":
+    #    if secilen_proje == "📊 Yönetici Özeti (Executive Dashboard)":
         st.title("📊 Yönetici Özeti & KPI Paneli")
         st.caption("Şirket genel performans metrikleri ve AI destekli sistem durumu.")
         
-        # Üst Metrik Kartları
         kpi1, kpi2, kpi3, kpi4 = st.columns(4)
         kpi1.metric("Yıllık Toplam Ciro", "3.24M TL", "+18.4%")
         kpi2.metric("Ortalama Kâr Marjı", "%32.6", "+2.1%")
@@ -109,7 +94,8 @@ else:
         col_a, col_b = st.columns([2, 1])
         with col_a:
             st.subheader("📈 Genel Satış İvmesi & AI Tahmin Trendi")
-            months = pd.date_range("2024-01-01", periods=18, freq="ME")
+            months = pd.date_range("2024-01-01", periods=18, freq="M")
+            np.random.seed(42)
             sales_data = np.linspace(120000, 280000, 18) + np.random.normal(0, 10000, 18)
             df_exec = pd.DataFrame({"Tarih": months, "Ciro": sales_data})
             fig_exec = px.area(df_exec, x="Tarih", y="Ciro", color_discrete_sequence=['#00CC96'])
@@ -124,10 +110,7 @@ else:
             * **Risk Scoring Engine:** Müşteri temerrüt olasılığı kestirimi.
             """)
 
-    # ----------------------------------------------------
-    # MODÜL 2: FİYAT & BAŞABAŞ OPTİMİZASYONU
-    # ----------------------------------------------------
-    elif secilen_proje == "💰 B2B Fiyat & Başabaş (Break-Even) Optimizasyonu":
+    #    elif secilen_proje == "💰 B2B Fiyat & Başabaş (Break-Even) Optimizasyonu":
         st.title("💰 B2B Fiyatlandırma, Esneklik & Başabaş Analizi")
         st.caption("Fiyat duyarlılığını simüle edin ve kârlılığı maksimize eden optimal noktayı belirleyin.")
         
@@ -143,7 +126,6 @@ else:
         
         st.markdown("---")
         
-        # Simülasyon Hesaplamaları
         fiyat_skalasi = np.linspace(degisken_maliyet * 1.05, mevcut_fiyat * 2, 50)
         talepler = hedef_satis * (fiyat_skalasi / mevcut_fiyat) ** esneklik
         cirolar = fiyat_skalasi * talepler
@@ -154,7 +136,6 @@ else:
         opt_fiyat = fiyat_skalasi[opt_idx]
         max_kar = karlar[opt_idx]
         
-        # Başabaş Noktası Adet Hesaplama (Mevcut Fiyatta)
         katki_payi = mevcut_fiyat - degisken_maliyet
         basabas_adeti = sabit_maliyet / katki_payi if katki_payi > 0 else 0
         
@@ -163,7 +144,6 @@ else:
         m2.metric("Maksimum Tahmini Aylık Kâr", f"{max_kar:,.2f} TL")
         m3.metric("Başabaş Satış Miktarı", f"{int(basabas_adeti):,} Adet", "Sabit Maliyet Kapatma")
         
-        # Grafik
         fig_price = go.Figure()
         fig_price.add_trace(go.Scatter(x=fiyat_skalasi, y=cirolar, mode='lines', name='Toplam Ciro (TL)', line=dict(color='#2E86C1')))
         fig_price.add_trace(go.Scatter(x=fiyat_skalasi, y=toplam_maliyetler, mode='lines', name='Toplam Maliyet (TL)', line=dict(color='#E74C3C', dash='dot')))
@@ -174,10 +154,7 @@ else:
         
         st.plotly_chart(fig_price, use_container_width=True)
 
-    # ----------------------------------------------------
-    # MODÜL 3: MÜŞTERİ SEGMENTASYONU & CLV
-    # ----------------------------------------------------
-    elif secilen_proje == "👥 Müşteri Segmentasyonu & Ömür Boyu Değer (CLV)":
+    #    elif secilen_proje == "👥 Müşteri Segmentasyonu & Ömür Boyu Değer (CLV)":
         st.title("👥 Müşteri Segmentasyonu & Ömür Boyu Değer (CLV) Analizi")
         
         uploaded_file = st.file_uploader("Kendi RFM Veri Setinizi Yükleyin (CSV / Excel)", type=["csv", "xlsx"], key="rfm_gen")
@@ -187,7 +164,7 @@ else:
                 df_rfm = pd.read_csv(uploaded_file) if uploaded_file.name.endswith('.csv') else pd.read_excel(uploaded_file)
                 st.success("✅ Özel müşteri verisi başarıyla yüklendi!")
             except Exception as e:
-                st.error(f"Hata: {e}")
+                st.error(f"Veri okunurken hata oluştu: {e}")
                 df_rfm = None
         else:
             st.info("💡 Kaggle / Şirket verisi yüklemediğiniz için demo RFM verisi gösteriliyor.")
@@ -224,14 +201,10 @@ else:
                 * **🆕 Yeni Müşteriler:** Hoş geldin serisi ve onboarding eğitimleri verin.
                 """)
 
-    # ----------------------------------------------------
-    # MODÜL 4: ZAMAN SERİSİ, ANOMALİ & SENARYO ANALİZİ
-    # ----------------------------------------------------
-    elif secilen_proje == "📈 Zaman Serisi, Anomali Tespiti & Senaryo Analizi":
+    #    elif secilen_proje == "📈 Zaman Serisi, Anomali Tespiti & Senaryo Analizi":
         st.title("📈 Zaman Serisi Analizi, Anomali Tespiti & What-If Senaryoları")
         st.caption("Gelecek dönem ciro projeksiyonu yapın, anomali günlerini tespit edin ve senaryoları simüle edin.")
         
-        # ÜST PARAMETRELER
         col_ts1, col_ts2, col_ts3 = st.columns(3)
         with col_ts1:
             tahmin_ayi = st.slider("Tahmin Projeksiyon Süresi (Dönem):", 1, 24, 12)
@@ -245,7 +218,12 @@ else:
         has_custom = False
         if uploaded_ts is not None:
             try:
-                df_raw = pd.read_csv(uploaded_ts) if uploaded_ts.name.endswith('.csv') else pd.read_excel(uploaded_ts)
+                # Veriyi okuma
+                if uploaded_ts.name.endswith('.csv'):
+                    df_raw = pd.read_csv(uploaded_ts)
+                else:
+                    df_raw = pd.read_excel(uploaded_ts)
+                
                 st.success("✅ Veri seti yüklendi. Lütfen sütun eşleştirmesini ve filtreleri ayarlayın:")
                 
                 c_col1, c_col2, c_col3 = st.columns(3)
@@ -256,20 +234,20 @@ else:
                     sales_col = st.selectbox("Satış / Ciro Sütunu:", num_cols if num_cols else df_raw.columns)
                 with c_col3:
                     freq_choice = st.selectbox("Zaman Çözünürlüğü:", ["Aylık (Monthly)", "Haftalık (Weekly)", "Günlük (Daily)"])
-                    freq_map = {"Aylık (Monthly)": "ME", "Haftalık (Weekly)": "W", "Günlük (Daily)": "D"}
+                    freq_map = {"Aylık (Monthly)": "M", "Haftalık (Weekly)": "W", "Günlük (Daily)": "D"}
 
-                # Akıllı Tarih Dönüştürme (GG/AA/YYYY ve YYYY/AA/GG uyumlu)
-                df_raw[date_col] = pd.to_datetime(df_raw[date_col], format='mixed', errors='coerce')
+                # Güvenli Tarih Dönüştürme
+                df_raw[date_col] = pd.to_datetime(df_raw[date_col], errors='coerce')
                 df_raw = df_raw.dropna(subset=[date_col, sales_col]).sort_values(by=date_col)
 
-                # Mantıksız veya Gelecek Yılları Filtreleme (Max Yıl Sınırlaması)
+                # Mantıksız/Gelecek Yılları Filtreleme
                 max_year = st.slider("Filtrele: Maksimum Yıl Seçimi", 2020, 2030, 2026)
                 df_raw = df_raw[df_raw[date_col].dt.year <= max_year]
 
                 # Seçilen Frekansta Toplulaştırma
                 df_m = df_raw.set_index(date_col).resample(freq_map[freq_choice])[sales_col].sum().reset_index()
                 
-                # En son tamamlanmamış (dip yapan) dönemi temizleme seçeneği
+                # Eksik / Dip Yapan Son Dönemi Temizleme
                 trim_last = st.checkbox("Son Tamamlanmamış / Eksik Dönemi Temizle (Dip Yapmayı Önler)", value=True)
                 if trim_last and len(df_m) > 2:
                     df_m = df_m.iloc[:-1]
@@ -278,25 +256,29 @@ else:
                     dates = df_m[date_col]
                     base_sales = df_m[sales_col].values
                     has_custom = True
+                else:
+                    st.warning("⚠️ Seçilen filtrelere uygun yeterli veri bulunamadı (en az 4 dönem gerekli). Demo verisi kullanılıyor.")
             except Exception as e:
-                st.error(f"Veri işleme hatası: {e}")
+                st.error(f"Veri işleme sırasında bir uyumsuzluk oluştu: {e}. Demo veri gösteriliyor.")
 
         if not has_custom:
-            dates = pd.date_range(start="2024-01-01", periods=24, freq="ME")
+            dates = pd.date_range(start="2024-01-01", periods=24, freq="M")
             np.random.seed(42)
             base_sales = np.linspace(100000, 250000, 24) + np.random.normal(0, 15000, 24)
-            # Yapay Anomali Ekleme
-            base_sales[8] = base_sales[8] * 1.45 
+            base_sales[8] = base_sales[8] * 1.45  # Yapay anomali
 
-        # Anomali Tespiti (Z-Score tabanlı)
+        # Anomali Tespiti (Z-Score)
         mean_val = np.mean(base_sales)
         std_val = np.std(base_sales)
-        z_scores = (base_sales - mean_val) / std_val
-        anomalies = np.abs(z_scores) > 1.75
+        if std_val > 0:
+            z_scores = (base_sales - mean_val) / std_val
+            anomalies = np.abs(z_scores) > 1.75
+        else:
+            anomalies = np.zeros(len(base_sales), dtype=bool)
         
-        # Gelecek Dönem Tahmini + Senaryo Kat sayısı
+        # Gelecek Tahmin Projeksiyonu
         last_date = dates.iloc[-1] if hasattr(dates, 'iloc') else dates[-1]
-        future_dates = pd.date_range(start=last_date + pd.DateOffset(months=1), periods=tahmin_ayi, freq="ME")
+        future_dates = pd.date_range(start=last_date + pd.DateOffset(months=1), periods=tahmin_ayi, freq="M")
         
         growth_rate = 0.02 * (1 + (pazarlama_artisi / 100))
         last_val = base_sales[-1]
@@ -305,26 +287,24 @@ else:
         upper_bound = [val * 1.12 for val in future_sales]
         lower_bound = [val * 0.88 for val in future_sales]
         
-        # Plotly Zaman Serisi Grafiği
+        # Plotly Grafik Oluşturma
         fig_ts = go.Figure()
         
-        # Geçmiş Veri
         fig_ts.add_trace(go.Scatter(x=dates, y=base_sales, mode='lines+markers', name='Geçmiş Satışlar', line=dict(color='#2E86C1', width=3)))
         
-        # Anomaliler
-        if any(anomalies):
+        if np.any(anomalies):
+            anom_x = [dates.iloc[i] if hasattr(dates, 'iloc') else dates[i] for i in range(len(anomalies)) if anomalies[i]]
+            anom_y = [base_sales[i] for i in range(len(anomalies)) if anomalies[i]]
             fig_ts.add_trace(go.Scatter(
-                x=dates[anomalies], 
-                y=base_sales[anomalies], 
+                x=anom_x, 
+                y=anom_y, 
                 mode='markers', 
-                name='Anomali / Olağandışı Sıçrama', 
+                name='Anomali / Sıçrama', 
                 marker=dict(color='red', size=12, symbol='x')
             ))
             
-        # Gelecek Tahmin
         fig_ts.add_trace(go.Scatter(x=future_dates, y=future_sales, mode='lines+markers', name='AI Tahmin Projeksiyonu', line=dict(dash='dash', color='#E67E22', width=3)))
         
-        # Güven Aralıkları
         if guven_bandi:
             fig_ts.add_trace(go.Scatter(x=future_dates, y=upper_bound, mode='lines', name='Üst Bant (%95)', line=dict(width=0), showlegend=False))
             fig_ts.add_trace(go.Scatter(x=future_dates, y=lower_bound, mode='lines', name='Alt Bant (%95)', fill='tonexty', fillcolor='rgba(230, 126, 34, 0.2)', line=dict(width=0)))
@@ -332,7 +312,7 @@ else:
         fig_ts.update_layout(title="Satış Projeksiyonu, Anomali ve Güven Aralığı Analizi", xaxis_title="Tarih", yaxis_title="Ciro / Miktar (TL)")
         st.plotly_chart(fig_ts, use_container_width=True)
         
-        # VERİ İNDİRME (EXPORT) BUTONU
+        # Export / İndirme Butonu
         df_export = pd.DataFrame({
             'Tarih': list(dates) + list(future_dates),
             'Ciro_TL': list(base_sales) + list(future_sales),
@@ -348,10 +328,7 @@ else:
             use_container_width=True
         )
 
-    # ----------------------------------------------------
-    # MODÜL 5: KREDİ RİSKİ & MÜŞTERİ SKORLAMA
-    # ----------------------------------------------------
-    elif secilen_proje == "💳 Kredi Riski & Müşteri Skorlama":
+    #    elif secilen_proje == "💳 Kredi Riski & Müşteri Skorlama":
         st.title("💳 Kredi Riski & Temerrüt Risk Skorlama Paneli")
         st.caption("Makine öğrenmesi modelleriyle firma veya müşterilerin kredi geri ödeme risklerini hesaplayın.")
         
@@ -366,7 +343,6 @@ else:
             sektor = st.selectbox("Sektör / Faaliyet Alanı:", ["Perakende", "İnşaat", "Teknoloji", "Gıda & Hizmet", "Lojistik"])
         
         if st.button("🔍 Risk Skorunu ve Temerrüt İhtimalini Hesapla", use_container_width=True):
-            # Basit Risk Hesaplama Algoritması
             risk_puan = (850 - kredi_skor) * 0.1 + (borc_orani * 0.5) + (gecikme_sayisi * 10)
             
             if risk_puan < 30:
