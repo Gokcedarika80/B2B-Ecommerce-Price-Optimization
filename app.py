@@ -234,7 +234,7 @@ else:
         # ÜST PARAMETRELER
         col_ts1, col_ts2, col_ts3 = st.columns(3)
         with col_ts1:
-            tahmin_ayi = st.slider("Tahmin Projeksiyon Süresi (Ay):", 1, 24, 12)
+            tahmin_ayi = st.slider("Tahmin Projeksiyon Süresi (Dönem):", 1, 24, 12)
         with col_ts2:
             pazarlama_artisi = st.slider("Senaryo: Pazarlama / Büyüme Etkisi (%):", -20, 50, 10)
         with col_ts3:
@@ -246,19 +246,34 @@ else:
         if uploaded_ts is not None:
             try:
                 df_raw = pd.read_csv(uploaded_ts) if uploaded_ts.name.endswith('.csv') else pd.read_excel(uploaded_ts)
-                st.success("✅ Veri seti yüklendi. Lütfen sütun eşleştirmesini yapın:")
+                st.success("✅ Veri seti yüklendi. Lütfen sütun eşleştirmesini ve filtreleri ayarlayın:")
                 
-                c_col1, c_col2 = st.columns(2)
+                c_col1, c_col2, c_col3 = st.columns(3)
                 with c_col1:
                     date_col = st.selectbox("Tarih Sütunu:", df_raw.columns)
                 with c_col2:
                     num_cols = df_raw.select_dtypes(include=[np.number]).columns.tolist()
                     sales_col = st.selectbox("Satış / Ciro Sütunu:", num_cols if num_cols else df_raw.columns)
-                
-                df_raw[date_col] = pd.to_datetime(df_raw[date_col], errors='coerce')
+                with c_col3:
+                    freq_choice = st.selectbox("Zaman Çözünürlüğü:", ["Aylık (Monthly)", "Haftalık (Weekly)", "Günlük (Daily)"])
+                    freq_map = {"Aylık (Monthly)": "ME", "Haftalık (Weekly)": "W", "Günlük (Daily)": "D"}
+
+                # Akıllı Tarih Dönüştürme (GG/AA/YYYY ve YYYY/AA/GG uyumlu)
+                df_raw[date_col] = pd.to_datetime(df_raw[date_col], format='mixed', errors='coerce')
                 df_raw = df_raw.dropna(subset=[date_col, sales_col]).sort_values(by=date_col)
-                df_m = df_raw.set_index(date_col).resample('ME')[sales_col].sum().reset_index()
+
+                # Mantıksız veya Gelecek Yılları Filtreleme (Max Yıl Sınırlaması)
+                max_year = st.slider("Filtrele: Maksimum Yıl Seçimi", 2020, 2030, 2026)
+                df_raw = df_raw[df_raw[date_col].dt.year <= max_year]
+
+                # Seçilen Frekansta Toplulaştırma
+                df_m = df_raw.set_index(date_col).resample(freq_map[freq_choice])[sales_col].sum().reset_index()
                 
+                # En son tamamlanmamış (dip yapan) dönemi temizleme seçeneği
+                trim_last = st.checkbox("Son Tamamlanmamış / Eksik Dönemi Temizle (Dip Yapmayı Önler)", value=True)
+                if trim_last and len(df_m) > 2:
+                    df_m = df_m.iloc[:-1]
+
                 if len(df_m) >= 4:
                     dates = df_m[date_col]
                     base_sales = df_m[sales_col].values
