@@ -4,14 +4,12 @@ import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
 
-# Sayfa Konfigürasyonu
 st.set_page_config(
     page_title="Gökçe Analytics | Kurumsal Karar Destek Portalı",
     page_icon="⚡",
     layout="wide"
 )
 
-# Custom CSS Stilleme
 st.markdown("""
     <style>
     .main {
@@ -26,14 +24,13 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Oturum Durumu Kontrolü
 if "authenticated" not in st.session_state:
     st.session_state["authenticated"] = False
 
 DEMO_USER = "admin"
 DEMO_PASS = "gokce2026"
 
-# GİRİŞ EKRANI (AUTHENTICATION)
+# GİRİŞ EKRANI
 if not st.session_state["authenticated"]:
     st.markdown("<br><br><h1 style='text-align: center;'>🔒 Gökçe Analytics Portal Girişi</h1>", unsafe_allow_html=True)
     st.markdown("<p style='text-align: center; color: gray;'>Kurumsal veri analitiği ve yapay zeka karar destek sistemine hoş geldiniz.</p>", unsafe_allow_html=True)
@@ -80,7 +77,6 @@ else:
     st.sidebar.markdown("---")
     st.sidebar.info("📌 **Sürüm:** Enterprise v2.5\n**Destek:** info@gokceanalytics.com")
 
-    # 1. YÖNETİCİ ÖZETİ
     if secilen_proje == "📊 Yönetici Özeti (Executive Dashboard)":
         st.title("📊 Yönetici Özeti & KPI Paneli")
         st.caption("Şirket genel performans metrikleri ve AI destekli sistem durumu.")
@@ -112,7 +108,6 @@ else:
             * **Risk Scoring Engine:** Müşteri temerrüt olasılığı kestirimi.
             """)
 
-    # 2. B2B FİYAT OPTİMİZASYONU
     elif secilen_proje == "💰 B2B Fiyat & Başabaş (Break-Even) Optimizasyonu":
         st.title("💰 B2B Fiyatlandırma, Esneklik & Başabaş Analizi")
         st.caption("Fiyat duyarlılığını simüle edin ve kârlılığı maksimize eden optimal noktayı belirleyin.")
@@ -157,7 +152,6 @@ else:
         
         st.plotly_chart(fig_price, use_container_width=True)
 
-    # 3. MÜŞTERİ SEGMENTASYONU
     elif secilen_proje == "👥 Müşteri Segmentasyonu & Ömür Boyu Değer (CLV)":
         st.title("👥 Müşteri Segmentasyonu & Ömür Boyu Değer (CLV) Analizi")
         
@@ -205,7 +199,6 @@ else:
                 * **🆕 Yeni Müşteriler:** Hoş geldin serisi ve onboarding eğitimleri verin.
                 """)
 
-    # 4. ZAMAN SERİSİ ANALİZİ
     elif secilen_proje == "📈 Zaman Serisi, Anomali Tespiti & Senaryo Analizi":
         st.title("📈 Zaman Serisi Analizi, Anomali Tespiti & What-If Senaryoları")
         st.caption("Gelecek dönem ciro projeksiyonu yapın, anomali günlerini tespit edin ve senaryoları simüle edin.")
@@ -223,50 +216,76 @@ else:
         has_custom = False
         if uploaded_ts is not None:
             try:
+                # Dosyayı oku
                 if uploaded_ts.name.endswith('.csv'):
                     df_raw = pd.read_csv(uploaded_ts)
                 else:
                     df_raw = pd.read_excel(uploaded_ts)
                 
-                st.success("✅ Veri seti yüklendi. Lütfen sütun eşleştirmesini ve filtreleri ayarlayın:")
+                st.success("✅ Veri seti başarıyla okundu! Lütfen uygun sütunları eşleştirin:")
                 
                 c_col1, c_col2, c_col3 = st.columns(3)
                 with c_col1:
                     date_col = st.selectbox("Tarih Sütunu:", df_raw.columns)
                 with c_col2:
-                    num_cols = df_raw.select_dtypes(include=[np.number]).columns.tolist()
-                    sales_col = st.selectbox("Satış / Ciro Sütunu:", num_cols if num_cols else df_raw.columns)
+                    sales_col = st.selectbox("Satış / Ciro / Miktar Sütunu:", df_raw.columns)
                 with c_col3:
                     freq_choice = st.selectbox("Zaman Çözünürlüğü:", ["Aylık (Monthly)", "Haftalık (Weekly)", "Günlük (Daily)"])
                     freq_map = {"Aylık (Monthly)": "ME", "Haftalık (Weekly)": "W", "Günlük (Daily)": "D"}
 
-                df_raw[date_col] = pd.to_datetime(df_raw[date_col], errors='coerce')
-                df_raw = df_raw.dropna(subset=[date_col, sales_col]).sort_values(by=date_col)
-
-                max_year = st.slider("Filtrele: Maksimum Yıl Seçimi", 2020, 2030, 2026)
-                df_raw = df_raw[df_raw[date_col].dt.year <= max_year]
-
-                df_m = df_raw.set_index(date_col).resample(freq_map[freq_choice])[sales_col].sum().reset_index()
+                # Güvenli Veri Temizleme
+                df_work = df_raw.copy()
                 
-                trim_last = st.checkbox("Son Tamamlanmamış / Eksik Dönemi Temizle (Dip Yapmayı Önler)", value=True)
-                if trim_last and len(df_m) > 2:
-                    df_m = df_m.iloc[:-1]
+                # Sayısal sütunu metin karakterlerinden temizleme ($ , TL vb.)
+                if df_work[sales_col].dtype == object:
+                    df_work[sales_col] = df_work[sales_col].astype(str).str.replace(r'[^\d.-]', '', regex=True)
+                
+                df_work[sales_col] = pd.to_numeric(df_work[sales_col], errors='coerce')
+                df_work[date_col] = pd.to_datetime(df_work[date_col], errors='coerce')
+                
+                # Geçersiz verileri temizle
+                df_work = df_work.dropna(subset=[date_col, sales_col]).sort_values(by=date_col)
 
-                if len(df_m) >= 4:
-                    dates = df_m[date_col]
-                    base_sales = df_m[sales_col].values
-                    has_custom = True
+                if len(df_work) > 0:
+                    min_year = int(df_work[date_col].dt.year.min())
+                    max_year_data = int(df_work[date_col].dt.year.max())
+                    
+                    selected_max_year = st.slider(
+                        "Filtrele: Maksimum Yıl Seçimi", 
+                        min_value=min_year, 
+                        max_value=max(max_year_data, min_year + 1), 
+                        value=max_year_data
+                    )
+                    
+                    df_work = df_work[df_work[date_col].dt.year <= selected_max_year]
+                    
+                    # Zaman Serisi Gruplama
+                    df_m = df_work.set_index(date_col).resample(freq_map[freq_choice])[sales_col].sum().reset_index()
+                    
+                    trim_last = st.checkbox("Son Tamamlanmamış / Eksik Dönemi Temizle (Dip Yapmayı Önler)", value=True)
+                    if trim_last and len(df_m) > 2:
+                        df_m = df_m.iloc[:-1]
+
+                    if len(df_m) >= 3:
+                        dates = df_m[date_col]
+                        base_sales = df_m[sales_col].values
+                        has_custom = True
+                    else:
+                        st.warning("⚠️ Seçilen filtrelere uygun yeterli veri dönemi bulunamadı (en az 3 dönem gerekli). Demo verisi gösteriliyor.")
                 else:
-                    st.warning("⚠️ Seçilen filtrelere uygun yeterli veri bulunamadı (en az 4 dönem gerekli). Demo verisi kullanılıyor.")
+                    st.error("❌ Seçilen sütunlardaki veriler sayıya veya tarihe dönüştürülemedi. Lütfen farklı bir sütun seçin.")
+                    
             except Exception as e:
                 st.error(f"Veri işleme sırasında bir uyumsuzluk oluştu: {e}. Demo veri gösteriliyor.")
 
+        # Demo Verisi Fallback
         if not has_custom:
             dates = pd.date_range(start="2024-01-01", periods=24, freq="ME")
             np.random.seed(42)
             base_sales = np.linspace(100000, 250000, 24) + np.random.normal(0, 15000, 24)
             base_sales[8] = base_sales[8] * 1.45  # Yapay anomali
 
+        # Anomali Tespiti
         mean_val = np.mean(base_sales)
         std_val = np.std(base_sales)
         if std_val > 0:
@@ -324,7 +343,6 @@ else:
             use_container_width=True
         )
 
-    # 5. KREDİ RİSKİ VE SKORLAMA
     elif secilen_proje == "💳 Kredi Riski & Müşteri Skorlama":
         st.title("💳 Kredi Riski & Temerrüt Risk Skorlama Paneli")
         st.caption("Makine öğrenmesi modelleriyle firma veya müşterilerin kredi geri ödeme risklerini hesaplayın.")
